@@ -1,26 +1,17 @@
-use sqlx::postgres::PgPoolOptions;
-use std::net::TcpListener;
+use axum::{http::StatusCode, routing::get, Router, Server};
+use std::net::SocketAddr;
 
-use zero2prod::configuration::get_configuration;
-use zero2prod::startup::run;
-use zero2prod::telemetry::{get_subscriber, init_subscriber};
+#[tokio::main]
+async fn main() {
+    let app = Router::new().route("/health_check", get(health_check));
 
-// TODO - Add CI/CD support for Rust and Postgres
+    let address = SocketAddr::from(([127, 0, 0, 1], 8000));
+    Server::bind(&address)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+}
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    let subscriber = get_subscriber("zero2prod".into(), "info".into(), std::io::stdout);
-    init_subscriber(subscriber);
-
-    let config = get_configuration().expect("Failed to load configuration");
-
-    let connection_pool = PgPoolOptions::new()
-        .connect_lazy(&config.database.connection_string())
-        .expect("Failed to connect to database");
-
-    let address = format!("{}:{}", config.application.host, config.application.port);
-
-    let listener = TcpListener::bind(address).expect("Failed to bind");
-
-    run(listener, connection_pool)?.await
+async fn health_check() -> StatusCode {
+    StatusCode::OK
 }
