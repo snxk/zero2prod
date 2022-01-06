@@ -17,7 +17,7 @@ use uuid::Uuid;
 TODO - Refactor this file
 TODO - Add a test for the server
 TODO - Add config file
-TODO - Dockerize
+DONE - Dockerize
 TODO - CI/CD
 */
 
@@ -36,8 +36,7 @@ async fn main() {
 
     let db_pool = PgPoolOptions::new()
         .max_connections(5)
-        .connect("postgres://postgres:password@localhost:5432/newsletter")
-        .await
+        .connect_lazy("postgres://postgres:password@localhost:5432/newsletter")
         .expect("Failed to connect to database");
 
     let app = Router::new()
@@ -46,7 +45,7 @@ async fn main() {
         .layer(AddExtensionLayer::new(db_pool))
         .layer(TraceLayer::new_for_http());
 
-    let address = SocketAddr::from(([127, 0, 0, 1], 8000));
+    let address = SocketAddr::from(([0, 0, 0, 0], 8000)); // TODO - Read from config, 0.0.0.0 only for docker build
     tracing::info!("Listening on http://{}", address);
     Server::bind(&address)
         .serve(app.into_make_service())
