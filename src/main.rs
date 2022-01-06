@@ -9,8 +9,17 @@ use serde::Deserialize;
 use sqlx::postgres::PgPoolOptions;
 use sqlx::{Pool, Postgres};
 use std::net::SocketAddr;
+use tokio::signal;
 use tower_http::trace::TraceLayer;
 use uuid::Uuid;
+
+/*
+TODO - Refactor this file
+TODO - Add a test for the server
+TODO - Add config file
+TODO - Dockerize
+TODO - CI/CD
+*/
 
 #[derive(Deserialize, Debug)]
 struct FormData {
@@ -41,6 +50,7 @@ async fn main() {
     tracing::info!("Listening on http://{}", address);
     Server::bind(&address)
         .serve(app.into_make_service())
+        .with_graceful_shutdown(shutdown_signal())
         .await
         .unwrap();
 }
@@ -70,4 +80,30 @@ async fn subscribe(form: Form<FormData>, Extension(pool): Extension<Pool<Postgre
             StatusCode::INTERNAL_SERVER_ERROR
         }
     }
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        signal::ctrl_c()
+            .await
+            .expect("Failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        signal::unix::signal(signal::unix::SignalKind::terminate())
+            .expect("Failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
+
+    tracing::info!("Signal received, starting graceful shutdown");
 }
