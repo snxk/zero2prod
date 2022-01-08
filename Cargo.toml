@@ -15,6 +15,7 @@ path = "src/main.rs"
 [dependencies]
 axum = "0.4.3"
 chrono = "0.4.19"
+configparser = { version = "3.0.0", features = ["indexmap"] }
 serde = { version = "1.0.133", features = ["derive"] }
 sqlx = { version = "0.5.10", features = [
   "postgres",

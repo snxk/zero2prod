@@ -1,11 +1,10 @@
-use sqlx::postgres::PgPoolOptions;
-use std::net::SocketAddr;
-use zero2prod::startup::start_server;
+use zero2prod::{config::get_config, startup::start_server};
 
 /*
 DONE - Refactor this file
 TODO - Add a test for the server
-TODO - Add config file
+DONE - Add config file
+TODO - Change the configparser library as is not working with docker
 DONE - Dockerize
 TODO - CI/CD
 */
@@ -17,12 +16,7 @@ async fn main() {
     }
     tracing_subscriber::fmt::init();
 
-    let db_pool = PgPoolOptions::new()
-        .max_connections(5)
-        .connect_lazy("postgres://postgres:password@localhost:5432/newsletter")
-        .expect("Failed to connect to database");
+    let config = get_config();
 
-    let address = SocketAddr::from(([127, 0, 0, 1], 8000)); // TODO - Read from config, 0.0.0.0 only for docker build
-
-    start_server(address, db_pool).await
+    start_server(config.address, config.db_pool).await
 }
