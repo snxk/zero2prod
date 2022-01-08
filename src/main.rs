@@ -1,11 +1,7 @@
 use zero2prod::{config::get_config, startup::start_server};
 
 /*
-DONE - Refactor this file
 TODO - Add a test for the server
-DONE - Add config file
-TODO - Change the configparser library as is not working with docker
-DONE - Dockerize
 TODO - CI/CD
 */
 
