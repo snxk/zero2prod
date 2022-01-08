@@ -1,28 +1,38 @@
-FROM lukemathwalker/cargo-chef:latest-rust-1.53.0 as chef
-WORKDIR /app
+# FROM rust:1.57.0 as build
 
-FROM chef as planner
-COPY . .
-# Compute a lock-like file for our project
-RUN cargo chef prepare  --recipe-path recipe.json
+# RUN USER=root cargo new --bin zero2prod
+# WORKDIR /zero2prod
 
-FROM chef as builder
-COPY --from=planner /app/recipe.json recipe.json
-# Build our project dependencies, not our application!
-RUN cargo chef cook --release --recipe-path recipe.json
+# COPY ./Cargo.toml ./Cargo.toml
+# COPY ./Cargo.lock ./Cargo.lock
+
+# RUN cargo build --release
+# RUN rm src/*.rs
+
+# COPY ./src ./src
+# COPY sqlx-data.json sqlx-data.json
+
+# RUN rm ./target/release/deps/zero2prod*
+# ENV APP_ENVIRONMENT=production
+# RUN cargo build --release
+
+# FROM debian:bookworm-slim
+
+# COPY --from=build /zero2prod/target/release/zero2prod /usr/local/bin/zero2prod
+
+# CMD ["/usr/local/bin/zero2prod"]
+
+FROM rust:1.57.0 as build
+
+WORKDIR /zero2prod
 COPY . .
+
 ENV SQLX_OFFLINE true
-# Build our project
-RUN cargo build --release --bin zero2prod
+RUN APP_ENVIRONMENT=production cargo build --release
 
-FROM debian:bullseye-slim AS runtime
-WORKDIR /app
-RUN apt-get update -y \
-  && apt-get install -y --no-install-recommends openssl \
-  # Clean up
-  && apt-get autoremove -y \
-  && apt-get clean -y \
-  && rm -rf /var/lib/apt/lists/*
-COPY --from=builder /app/target/release/zero2prod zero2prod
-COPY configuration configuration
-ENV APP_ENVIRONMENT production
+FROM debian:bookworm-slim
+
+COPY --from=build /zero2prod/target/release/zero2prod /usr/local/bin/zero2prod
+COPY ./config /usr/local/bin/
+
+CMD ["/usr/local/bin/zero2prod"]

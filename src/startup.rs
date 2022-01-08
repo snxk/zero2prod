@@ -1,22 +1,25 @@
-use crate::routes::{health_check, subscribe};
-use actix_web::dev::Server;
-use actix_web::{web, App, HttpServer};
-use sqlx::PgPool;
-use std::net::TcpListener;
-use tracing_actix_web::TracingLogger;
+use crate::graceful_shutdown::shutdown_signal;
+use crate::routers::{health_check, subscribe};
+use axum::{
+    routing::{get, post},
+    AddExtensionLayer, Router, Server,
+};
+use sqlx::{Pool, Postgres};
+use std::net::SocketAddr;
+use tower_http::trace::TraceLayer;
 
-pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
-    let db_pool = web::Data::new(db_pool);
+pub async fn start_server(address: SocketAddr, db_pool: Pool<Postgres>) {
+    tracing::info!("{}", address);
 
-    let server = HttpServer::new(move || {
-        App::new()
-            .wrap(TracingLogger::default())
-            .route("/health_check", web::get().to(health_check))
-            .route("/subscriptions", web::post().to(subscribe))
-            .app_data(db_pool.clone())
-    })
-    .listen(listener)?
-    .run();
+    let app = Router::new()
+        .route("/health_check", get(health_check))
+        .route("/subscriptions", post(subscribe))
+        .layer(AddExtensionLayer::new(db_pool))
+        .layer(TraceLayer::new_for_http());
 
-    Ok(server)
+    Server::bind(&address)
+        .serve(app.into_make_service())
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .unwrap()
 }
