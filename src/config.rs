@@ -19,7 +19,7 @@ pub fn get_config() -> Config {
     let environment =
         std::env::var("APP_ENVIRONMENT").unwrap_or_else(|_| "development".to_string());
 
-    //* Could be refactored */
+    //TODO - Add a test for the config file
     match environment.as_str() {
         "development" => config.load("config/development.ini").unwrap(),
         "production" => config.load("config/production.ini").unwrap(),
