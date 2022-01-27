@@ -13,21 +13,6 @@ name = "zero2prod"
 path = "src/main.rs"
 
 [dependencies]
-axum = "0.4.3"
-chrono = "0.4.19"
-configparser = { version = "3.0.0", features = ["indexmap"] }
-serde = { version = "1.0.133", features = ["derive"] }
-sqlx = { version = "0.5.10", features = [
-  "postgres",
-  "runtime-tokio-rustls",
-  "macros",
-  "uuid",
-  "chrono",
-  "migrate",
-  "offline",
-], default-features = false }
+actix-rt = "2.6.0"
+actix-web = "3.3.3"
 tokio = { version = "1.15.0", features = ["full"] }
-tower-http = { version = "0.2.0", features = ["trace"] }
-tracing = "0.1.29"
-tracing-subscriber = { version = "0.3.5", features = ["env-filter"] }
-uuid = { version = "0.8.2", features = ["v4"] }

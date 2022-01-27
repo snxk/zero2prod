@@ -1,22 +1,11 @@
-use zero2prod::{config::get_config, startup::start_server};
+use std::net::SocketAddr;
+use zero2prod::run;
 
-/*
-DONE - Refactor this file
-TODO - Add a test for the server
-DONE - Add config file
-TODO - Change the configparser library as is not working with docker
-DONE - Dockerize
-TODO - CI/CD
-*/
+// TODO - Implement Integration Tests
 
-#[tokio::main]
-async fn main() {
-    if std::env::var_os("RUST_LOG").is_none() {
-        std::env::set_var("RUST_LOG", "zero2prod=debug,tower_http=debug");
-    }
-    tracing_subscriber::fmt::init();
-
-    let config = get_config();
-
-    start_server(config.address, config.db_pool).await
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
+    // Bubble up the io::Error if we failed to bind the address
+    // Otherwise call .await on our Server
+    run(SocketAddr::from(([127, 0, 0, 1], 8000)))?.await
 }
